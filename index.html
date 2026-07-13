@@ -27,6 +27,13 @@
 </head>
 <body>
     <div class="container">
+        <div class="user-section">
+            <div class="current-user">
+                <span>플레이어: <strong id="currentUser">게스트</strong></span>
+                <button class="user-switch-btn" onclick="showUserModal()">변경</button>
+            </div>
+        </div>
+
         <div class="header">
             <div class="title">
                 <h1>2048</h1>
@@ -75,6 +82,18 @@
         </div>
 
         <button class="ranking-btn" onclick="toggleRanking()">🏆 랭킹 보기</button>
+
+        <div class="user-modal" id="userModal" style="display: none;">
+            <div class="modal-content">
+                <h2>플레이어 선택</h2>
+                <div class="user-list" id="userList"></div>
+                <div class="user-input-group">
+                    <input type="text" id="newUserName" placeholder="새로운 플레이어 이름" maxlength="20">
+                    <button class="modal-btn" onclick="addNewUser()">추가</button>
+                </div>
+                <button class="modal-btn cancel-btn" onclick="closeUserModal()">닫기</button>
+            </div>
+        </div>
     </div>
 
     <script src="game.js"></script>
