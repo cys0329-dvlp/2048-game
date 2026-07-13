@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 게임 - 무료 온라인 게임</title>
+    
+    <!-- SEO 메타 태그 -->
+    <meta name="description" content="2048 게임을 온라인에서 무료로 즐기세요! 같은 숫자를 합쳐서 2048을 만드는 중독성 있는 퍼즐 게임입니다.">
+    <meta name="keywords" content="2048, 게임, 퍼즐 게임, 숫자 게임, 무료 게임, 온라인 게임">
+    <meta name="author" content="2048 Game">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Korean">
+    
+    <!-- Open Graph (소셜 미디어 공유용) -->
+    <meta property="og:title" content="2048 게임 - 무료 온라인 게임">
+    <meta property="og:description" content="같은 숫자를 합쳐서 2048을 만드는 중독성 있는 퍼즐 게임입니다.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="2048 Game">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="2048 게임">
+    <meta name="twitter:description" content="무료 온라인 2048 게임을 즐기세요!">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                <h1>2048</h1>
+                <p>같은 숫자끼리 합쳐서 2048을 만드세요!</p>
+            </div>
+            <div class="stats">
+                <div class="score-box">
+                    <div class="label">점수</div>
+                    <div class="score" id="score">0</div>
+                </div>
+                <div class="score-box">
+                    <div class="label">최고 점수</div>
+                    <div class="score" id="bestScore">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard">
+            <!-- 16개의 타일이 생성됩니다 -->
+        </div>
+
+        <div class="controls">
+            <button class="new-game-btn" onclick="newGame()">새 게임</button>
+        </div>
+
+        <div class="game-over" id="gameOverModal" style="display: none;">
+            <div class="modal-content">
+                <h2 id="gameOverTitle">게임 오버!</h2>
+                <p id="gameOverMessage">게임이 끝났습니다!</p>
+                <div class="name-input-group" id="nameInputGroup" style="display: none;">
+                    <input type="text" id="playerName" placeholder="이름 입력 (선택사항)" maxlength="20">
+                    <button class="modal-btn" onclick="saveScore()">점수 저장</button>
+                </div>
+                <button class="modal-btn" onclick="newGame()">다시 시작</button>
+            </div>
+        </div>
+
+        <div class="ranking-panel" id="rankingPanel">
+            <div class="ranking-header">
+                <h3>🏆 랭킹</h3>
+                <button class="close-ranking" onclick="toggleRanking()">✕</button>
+            </div>
+            <div class="ranking-list" id="rankingList">
+                <div class="ranking-item">아직 기록이 없습니다</div>
+            </div>
+        </div>
+
+        <button class="ranking-btn" onclick="toggleRanking()">🏆 랭킹 보기</button>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
