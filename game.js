@@ -3,13 +3,19 @@ class Game2048 {
         this.size = 4;
         this.board = [];
         this.score = 0;
-        this.bestScore = localStorage.getItem('bestScore2048') || 0;
+        this.bestScore = this.loadBestScore();
         this.gameOver = false;
         this.won = false;
         this.tileId = 0;
         this.tiles = new Map(); // 타일 ID -> {value, id}
         this.previousBoard = [];
         this.init();
+    }
+
+    loadBestScore() {
+        const currentUser = getCurrentUser();
+        const key = `user_${currentUser}_bestScore`;
+        return localStorage.getItem(key) || 0;
     }
 
     init() {
@@ -232,43 +238,170 @@ class Game2048 {
     updateBestScore() {
         if (this.score > this.bestScore) {
             this.bestScore = this.score;
-            localStorage.setItem('bestScore2048', this.bestScore);
+            const currentUser = getCurrentUser();
+            const key = `user_${currentUser}_bestScore`;
+            localStorage.setItem(key, this.bestScore);
             document.getElementById('bestScore').textContent = this.bestScore;
         }
     }
 }
 
-// 랭킹 관리
+// ========================
+// 사용자 관리 시스템
+// ========================
+
+const USERS_KEY = 'game2048_users';
+const CURRENT_USER_KEY = 'game2048_current_user';
+
+function getUsers() {
+    const data = localStorage.getItem(USERS_KEY);
+    return data ? JSON.parse(data) : ['게스트'];
+}
+
+function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function getCurrentUser() {
+    return localStorage.getItem(CURRENT_USER_KEY) || '게스트';
+}
+
+function setCurrentUser(username) {
+    localStorage.setItem(CURRENT_USER_KEY, username);
+    document.getElementById('currentUser').textContent = username;
+}
+
+function addUser(username) {
+    if (!username.trim()) {
+        alert('사용자 이름을 입력하세요');
+        return;
+    }
+
+    const users = getUsers();
+    const cleanName = username.trim().substring(0, 20);
+
+    if (users.includes(cleanName)) {
+        alert('이미 존재하는 사용자입니다');
+        return;
+    }
+
+    users.push(cleanName);
+    saveUsers(users);
+    setCurrentUser(cleanName);
+    updateUserList();
+    document.getElementById('newUserName').value = '';
+    updateRankingDisplay();
+}
+
+function deleteUser(username) {
+    if (username === '게스트') {
+        alert('게스트 사용자는 삭제할 수 없습니다');
+        return;
+    }
+
+    if (confirm(`"${username}" 사용자를 삭제하시겠습니까? 모든 기록이 삭제됩니다.`)) {
+        const users = getUsers();
+        const index = users.indexOf(username);
+        if (index > -1) {
+            users.splice(index, 1);
+            saveUsers(users);
+
+            // 기록도 함께 삭제
+            localStorage.removeItem(`user_${username}_bestScore`);
+            localStorage.removeItem(`user_${username}_ranking`);
+
+            // 현재 사용자가 삭제되었다면 게스트로 변경
+            if (getCurrentUser() === username) {
+                setCurrentUser('게스트');
+            }
+
+            updateUserList();
+            updateRankingDisplay();
+        }
+    }
+}
+
+function updateUserList() {
+    const users = getUsers();
+    const currentUser = getCurrentUser();
+    const userList = document.getElementById('userList');
+    userList.innerHTML = '';
+
+    users.forEach(user => {
+        const bestScore = localStorage.getItem(`user_${user}_bestScore`) || '0';
+        const userItem = document.createElement('div');
+        userItem.className = `user-item ${user === currentUser ? 'active' : ''}`;
+        userItem.innerHTML = `
+            <span class="user-item-name">${user}</span>
+            <span class="user-item-score">최고: ${parseInt(bestScore).toLocaleString()}</span>
+            ${user !== '게스트' ? `<button class="user-item-delete" onclick="deleteUser('${user}')">삭제</button>` : '<span style="width: 50px;"></span>'}
+        `;
+        userItem.style.cursor = 'pointer';
+        userItem.onclick = () => switchUser(user);
+        userList.appendChild(userItem);
+    });
+}
+
+function switchUser(username) {
+    setCurrentUser(username);
+    game = new Game2048(); // 새로운 사용자로 게임 시작
+    updateUserList();
+    updateRankingDisplay();
+    closeUserModal();
+}
+
+function showUserModal() {
+    updateUserList();
+    document.getElementById('userModal').style.display = 'flex';
+}
+
+function closeUserModal() {
+    document.getElementById('userModal').style.display = 'none';
+}
+
+function addNewUser() {
+    const name = document.getElementById('newUserName').value;
+    addUser(name);
+}
+
+// ========================
+// 랭킹 시스템 (사용자별)
+// ========================
+
 const RANKING_KEY = 'game2048_ranking';
 const MAX_RANKING = 10;
 
 function getRanking() {
-    const data = localStorage.getItem(RANKING_KEY);
+    const currentUser = getCurrentUser();
+    const key = `user_${currentUser}_ranking`;
+    const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : [];
 }
 
 function saveRanking(ranking) {
-    localStorage.setItem(RANKING_KEY, JSON.stringify(ranking));
+    const currentUser = getCurrentUser();
+    const key = `user_${currentUser}_ranking`;
+    localStorage.setItem(key, JSON.stringify(ranking));
 }
 
-function addScoreToRanking(score, name = '익명') {
+function addScoreToRanking(score, name = '기록') {
     if (!name.trim()) {
-        name = '익명';
+        name = '기록';
     }
-    
+
     let ranking = getRanking();
     ranking.push({
         score: score,
         name: name.trim().substring(0, 20),
         date: new Date().toLocaleDateString('ko-KR')
     });
-    
+
     // 점수 기준으로 정렬 (내림차순)
     ranking.sort((a, b) => b.score - a.score);
-    
+
     // 상위 10개만 유지
     ranking = ranking.slice(0, MAX_RANKING);
-    
+
     saveRanking(ranking);
     updateRankingDisplay();
 }
@@ -276,12 +409,12 @@ function addScoreToRanking(score, name = '익명') {
 function updateRankingDisplay() {
     const ranking = getRanking();
     const rankingList = document.getElementById('rankingList');
-    
+
     if (ranking.length === 0) {
         rankingList.innerHTML = '<div class="ranking-item">아직 기록이 없습니다</div>';
         return;
     }
-    
+
     rankingList.innerHTML = '';
     ranking.forEach((item, index) => {
         const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
@@ -301,14 +434,19 @@ function toggleRanking() {
     rankingPanel.classList.toggle('show');
 }
 
+// ========================
+// 게임 클래스
+// ========================
+
 let game = new Game2048();
 
-// 초기 랭킹 표시
+// 초기 사용자 및 랭킹 표시
+setCurrentUser(getCurrentUser());
 updateRankingDisplay();
 
 function saveScore() {
     const playerName = document.getElementById('playerName').value;
-    addScoreToRanking(game.score, playerName);
+    addScoreToRanking(game.score, playerName || '기록');
     document.getElementById('playerName').value = '';
     document.getElementById('nameInputGroup').style.display = 'none';
     newGame();
